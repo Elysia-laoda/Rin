@@ -121,7 +121,10 @@ export async function getStorageObject(env: Env, storageKey: string): Promise<Re
   }
 
   if (!response.ok) {
-    throw new Error(`Failed to fetch storage object: ${response.status} ${response.statusText}`);
+    const detail = await response.text().catch(() => "");
+    throw new Error(
+      `Failed to fetch storage object: ${response.status} ${response.statusText}${detail ? ` — ${detail.slice(0, 300)}` : ""}`,
+    );
   }
 
   return response;

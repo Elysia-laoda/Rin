@@ -50,7 +50,10 @@ export async function putObject(
     });
     
     if (!response.ok) {
-        throw new Error(`Failed to upload to S3: ${response.status} ${response.statusText}`);
+        const detail = await response.text().catch(() => "");
+        throw new Error(
+            `Failed to upload to S3: ${response.status} ${response.statusText}${detail ? ` — ${detail.slice(0, 300)}` : ""}`,
+        );
     }
     
     return response;
