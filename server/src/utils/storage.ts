@@ -113,39 +113,6 @@ export async function getStorageObject(env: Env, storageKey: string): Promise<Re
 
   const client = createS3Client(env);
   const requestUrl = buildS3ObjectUrl(env, storageKey);
-  console.log(
-    "storage.fetch",
-    JSON.stringify({
-      url: requestUrl,
-      hasId: Boolean(env.S3_ACCESS_KEY_ID),
-      idLen: env.S3_ACCESS_KEY_ID ? env.S3_ACCESS_KEY_ID.length : 0,
-      hasSecret: Boolean(env.S3_SECRET_ACCESS_KEY),
-      secretLen: env.S3_SECRET_ACCESS_KEY ? env.S3_SECRET_ACCESS_KEY.length : 0,
-      region: env.S3_REGION ?? null,
-      forcePathStyle: env.S3_FORCE_PATH_STYLE ?? null,
-    }),
-  );
-  try {
-    const probe = await client.sign(requestUrl, { method: "GET" });
-    const auth = probe.headers.get("authorization");
-    console.log(
-      "storage.sign",
-      JSON.stringify({
-        authPrefix: auth ? auth.slice(0, 90) : null,
-        authLen: auth ? auth.length : 0,
-        signingHeaders: (() => {
-          const names: string[] = [];
-          probe.headers.forEach((_v, k) => {
-            names.push(k);
-          });
-          return names.join(",");
-        })(),
-      }),
-    );
-  } catch (e) {
-    console.log("storage.sign.failed", String(e));
-  }
-
   const response = await client.fetch(requestUrl, {
     method: "GET",
     headers: storageCompatHeaders(),
@@ -157,11 +124,6 @@ export async function getStorageObject(env: Env, storageKey: string): Promise<Re
 
   if (!response.ok) {
     const detail = await response.text().catch(() => "");
-    const respHeaders: Record<string, string> = {};
-    response.headers.forEach((v, k) => {
-      respHeaders[k] = v;
-    });
-    console.log("storage.resp.headers", JSON.stringify(respHeaders));
     throw new Error(
       `Failed to fetch storage object: ${response.status} ${response.statusText}${detail ? ` — ${detail.slice(0, 300)}` : ""}`,
     );
