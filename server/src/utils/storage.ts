@@ -125,6 +125,21 @@ export async function getStorageObject(env: Env, storageKey: string): Promise<Re
       forcePathStyle: env.S3_FORCE_PATH_STYLE ?? null,
     }),
   );
+  try {
+    const probe = await client.sign(requestUrl, { method: "GET" });
+    const auth = probe.headers.get("authorization");
+    console.log(
+      "storage.sign",
+      JSON.stringify({
+        authPrefix: auth ? auth.slice(0, 90) : null,
+        authLen: auth ? auth.length : 0,
+        signingHeaders: [...probe.headers.keys()].join(","),
+      }),
+    );
+  } catch (e) {
+    console.log("storage.sign.failed", String(e));
+  }
+
   const response = await client.fetch(requestUrl, {
     method: "GET",
   });
@@ -135,6 +150,11 @@ export async function getStorageObject(env: Env, storageKey: string): Promise<Re
 
   if (!response.ok) {
     const detail = await response.text().catch(() => "");
+    const respHeaders: Record<string, string> = {};
+    response.headers.forEach((v, k) => {
+      respHeaders[k] = v;
+    });
+    console.log("storage.resp.headers", JSON.stringify(respHeaders));
     throw new Error(
       `Failed to fetch storage object: ${response.status} ${response.statusText}${detail ? ` — ${detail.slice(0, 300)}` : ""}`,
     );
