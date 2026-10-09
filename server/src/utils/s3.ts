@@ -5,10 +5,15 @@ export function createS3Client(env: Env): AwsClient {
     const accessKeyId = env.S3_ACCESS_KEY_ID;
     const secretAccessKey = env.S3_SECRET_ACCESS_KEY;
     
+    // S3 兼容服务（如阿里云 OSS）需要在 SigV4 签名里带上正确 region；
+    // 未配置或为 R2 的 "auto" 时退回 aws4fetch 的默认值，保持原有行为。
+    const region = env.S3_REGION && env.S3_REGION !== "auto" ? env.S3_REGION : "us-east-1";
+
     return new AwsClient({
         accessKeyId,
         secretAccessKey,
         service: "s3",
+        region,
     });
 }
 
