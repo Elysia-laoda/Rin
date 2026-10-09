@@ -1,5 +1,5 @@
 import { path_join } from "./path";
-import { buildS3ObjectUrl, createS3Client, putObject as putS3Object } from "./s3";
+import { buildS3ObjectUrl, createS3Client, putObject as putS3Object, storageCompatHeaders } from "./s3";
 
 type StorageTarget =
   | {
@@ -133,7 +133,13 @@ export async function getStorageObject(env: Env, storageKey: string): Promise<Re
       JSON.stringify({
         authPrefix: auth ? auth.slice(0, 90) : null,
         authLen: auth ? auth.length : 0,
-        signingHeaders: [...probe.headers.keys()].join(","),
+        signingHeaders: (() => {
+          const names: string[] = [];
+          probe.headers.forEach((_v, k) => {
+            names.push(k);
+          });
+          return names.join(",");
+        })(),
       }),
     );
   } catch (e) {
@@ -142,6 +148,7 @@ export async function getStorageObject(env: Env, storageKey: string): Promise<Re
 
   const response = await client.fetch(requestUrl, {
     method: "GET",
+    headers: storageCompatHeaders(),
   });
 
   if (response.status === 404) {
@@ -175,6 +182,7 @@ export async function headStorageObject(env: Env, storageKey: string): Promise<R
   const client = createS3Client(env);
   const response = await client.fetch(buildS3ObjectUrl(env, storageKey), {
     method: "HEAD",
+    headers: storageCompatHeaders(),
   });
 
   if (response.status === 404) {

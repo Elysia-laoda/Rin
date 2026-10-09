@@ -1,6 +1,12 @@
 import { AwsClient } from "aws4fetch";
 import { path_join } from "./path";
 
+// 阿里云 OSS 的 V4 签名要求请求头带 `x-oss-content-sha256: UNSIGNED-PAYLOAD`；
+// 其他 S3 兼容服务（R2 / MinIO 等）对该头无副作用。
+export function storageCompatHeaders(): Record<string, string> {
+    return { "x-oss-content-sha256": "UNSIGNED-PAYLOAD" };
+}
+
 export function createS3Client(env: Env): AwsClient {
     const accessKeyId = env.S3_ACCESS_KEY_ID;
     const secretAccessKey = env.S3_SECRET_ACCESS_KEY;
@@ -38,7 +44,7 @@ export async function putObject(
         url = `${urlObj.protocol}//${bucket}.${urlObj.host}/${key}`;
     }
     
-    const headers: Record<string, string> = {};
+    const headers: Record<string, string> = { ...storageCompatHeaders() };
     if (contentType) {
         headers["Content-Type"] = contentType;
     }
