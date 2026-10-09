@@ -112,7 +112,20 @@ export async function getStorageObject(env: Env, storageKey: string): Promise<Re
   }
 
   const client = createS3Client(env);
-  const response = await client.fetch(buildS3ObjectUrl(env, storageKey), {
+  const requestUrl = buildS3ObjectUrl(env, storageKey);
+  console.log(
+    "storage.fetch",
+    JSON.stringify({
+      url: requestUrl,
+      hasId: Boolean(env.S3_ACCESS_KEY_ID),
+      idLen: env.S3_ACCESS_KEY_ID ? env.S3_ACCESS_KEY_ID.length : 0,
+      hasSecret: Boolean(env.S3_SECRET_ACCESS_KEY),
+      secretLen: env.S3_SECRET_ACCESS_KEY ? env.S3_SECRET_ACCESS_KEY.length : 0,
+      region: env.S3_REGION ?? null,
+      forcePathStyle: env.S3_FORCE_PATH_STYLE ?? null,
+    }),
+  );
+  const response = await client.fetch(requestUrl, {
     method: "GET",
   });
 
